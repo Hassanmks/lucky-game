@@ -1,0 +1,38 @@
+name: Build Lucky Game APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: unzip -o "$(ls -1 *.zip | head -n 1)" -x ".github/*"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install & Build APK
+        run: |
+          npm install
+          npx cap add android
+          node scripts/configure-android.mjs
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../LuckyGame-E9999.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LuckyGame-E9999-APK
+          path: LuckyGame-E9999.apk
